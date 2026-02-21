@@ -1,16 +1,29 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "<CHARTNAME>.name" -}}
+{{- define "commonLibrary.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
+
+{{/*
+Nama stable (tanpa suffix) — digunakan oleh Canary Ingress
+untuk merujuk ke stable Service.
+*/}}
+{{- define "common.stableName" -}}
+{{- if .Values.fullnameOverride -}}
+  {{- .Values.fullnameOverride | trunc 55 | trimSuffix "-" -}}
+{{- else -}}
+  {{- $name := default .Chart.Name .Values.nameOverride -}}
+  {{- printf "%s-%s" .Release.Name $name | trunc 55 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "<CHARTNAME>.fullname" -}}
+{{- define "commonLibrary.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,18 +39,18 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "<CHARTNAME>.chart" -}}
+{{- define "commonLibrary.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "<CHARTNAME>.labels" -}}
-helm.sh/chart: {{ include "<CHARTNAME>.chart" . }}
-{{ include "<CHARTNAME>.selectorLabels" . }}
+{{- define "commonLibrary.labels" -}}
+helm.sh/chart: {{ include "commonLibrary.chart" . }}
+{{ include "commonLibrary.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+app.kubernetes.io/version: {{ .Values.image.tag | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
@@ -45,35 +58,32 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "<CHARTNAME>.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "<CHARTNAME>.name" . }}
+{{- define "commonLibrary.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "commonLibrary.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "<CHARTNAME>.serviceAccountName" -}}
+{{- define "commonLibrary.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "<CHARTNAME>.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "commonLibrary.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
 
+{{/*
+Create the name external secret store name
+*/}}
+{{- define "commonLibrary.es.secretStoreName" -}}
+{{- printf "secret-store-%s" .Values.global.env -}}
+{{- end -}}
 
 {{/*
-Create the name of the annotation load balancer to use
+Create the name external secret target name
 */}}
-{{- define "<CHARTNAME>.cloud.loadBalancerProvider" }}
-{{- if eq .Values.cloud.loadBalancerProvider "Alibaba" -}}
-service.beta.kubernetes.io/alibaba-cloud-loadbalancer-protocol-port: {{ .Values.alibabaLoadBalancer.protocol | quote }}
-service.beta.kubernetes.io/alibaba-cloud-loadbalancer-cert-id: {{ .Values.alibabaLoadBalancer.certId | quote }}
-service.beta.kubernetes.io/alibaba-cloud-loadbalancer-id: {{ .Values.alibabaLoadBalancer.loadBalancerId | quote }}
-{{- end}}
-
-{{- if eq .Values.cloud.loadBalancerProvider "GCP" -}}
-networking.gke.io/load-balancer-type: "Internal"
-networking.gke.io/internal-load-balancer-subnet: {{ .Values.gcpLoadBalancer.subnet | quote }}
-{{- end}}
-{{- end }}
+{{- define "commonLibrary.es.targetName" -}}
+{{- printf "%s-%s" .Values.global.env (include "commonLibrary.fullname" .) -}}
+{{- end -}}

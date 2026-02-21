@@ -1,13 +1,13 @@
+{{- define "commonLibrary.ingress" -}}
 {{- if .Values.ingress.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "<CHARTNAME>.fullname" . }}
+  name: {{ include "commonLibrary.fullname" . }}
   labels:
-    {{- include "<CHARTNAME>.labels" . | nindent 4 }}
+    {{- include "commonLibrary.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
-    {{- include "<CHARTNAME>.alibabaLoadBalancer" . | nindent 3 }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
@@ -36,9 +36,10 @@ spec:
             {{- end }}
             backend:
               service:
-                name: {{ include "<CHARTNAME>.fullname" $ }}
+                name: {{ include "commonLibrary.fullname" $ }}
                 port:
-                  number: {{ $.Values.service.port }}
+                  number: {{ $.Values.service.targetPort }}
           {{- end }}
     {{- end }}
 {{- end }}
+{{- end -}}
