@@ -1,5 +1,5 @@
 apiVersion: v2
-name: commonLibrary
+name: common-library
 description: A Helm common chart for common framework application Kubernetes
 type: library
 version: 1.0.0
